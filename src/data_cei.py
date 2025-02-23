@@ -29,5 +29,5 @@ class DataCei:
         if self.df is None:
             raise NoDataException('Data is empty')
         self.df['data'] =  self.df['data'].dt.strftime(self.__date_format)
-        self.df.to_csv(path, ';', index=False)
+        self.df.to_csv(path_or_buf=path, sep=';', index=False)
         
