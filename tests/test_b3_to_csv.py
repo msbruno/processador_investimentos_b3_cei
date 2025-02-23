@@ -22,7 +22,6 @@ class TestB3CsvProcessor(unittest.TestCase):
         self.assertTrue('HGLG11' in operations)
         self.assertEqual(3, operations['HGLG11'])
         self.assertEqual(2, operations['SUZB3'])
-        print(df.columns)
 
 class TestDataCei(unittest.TestCase):
 

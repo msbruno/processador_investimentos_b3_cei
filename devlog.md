@@ -1,17 +1,20 @@
-## - Instala o ambiente virtual
+## Instala o ambiente virtual
 ``` python -m virtualenv venv ```
 
 ## Seta execução de scripts (windows)
 ``` Set-ExecutionPolicy Unrestricted -Scope Process ```
 
-## - Ativa 
+## Ativa 
 ``` .\venv\Scripts\activate ```
 
-## - Instala Coverage
+## Instala Coverage
 ``` pip install coverage ```
 
-## - Instala pandas 
+## Instala pandas 
 ``` pip install pandas ```
 
-## - Instala XLSX reader 
+## Instala XLSX reader 
 ``` pip install openpyxl ```
+
+## Roda discovery de testes
+``` python -m unittest discover ```
