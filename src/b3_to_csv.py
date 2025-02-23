@@ -50,10 +50,8 @@ class B3CsvProcessor:
         return df
 
     def __treat_operation(self, df):
-        temp = df.copy()
-        op = {'Compra': 'COMPRADA', 'Venda': 'VENDIDA'}
-        temp['operacao'] = temp.apply(lambda x: op[x['operacao']], axis=1)
-        return temp
+        df['operacao'] = df['operacao'].str.upper()
+        return df
 
     def __treat_columns(self, df_original:pd.DataFrame):
         df = df_original.copy()
@@ -77,15 +75,6 @@ class B3CsvProcessor:
     def __sort(self, df:pd.DataFrame):
         return df.sort_values(['data', 'ticker', 'corretagem'])
 
-    def __func(self, x, operation):
-        return (x['qtd'], x['pm']) if operation == x['operacao'] else (0,0)
-
-    def __create_column_for_operation(self, df):
-        temp = df.copy()
-        temp['qtd_venda'], temp['pm_venda'] = zip(*temp.apply(lambda x:self.__func(x, 'VENDIDA'), axis=1))
-        temp['qtd_compra'], temp['pm_compra'] = zip(*temp.apply(lambda x:self.__func(x, 'COMPRADA'), axis=1))
-        return temp
-
     def create_treated_dataframe(self, path_xlsx: str)-> DataCei:
         """Create treated Dataframe from B3's xslx .
         Keyword arguments:
@@ -95,7 +84,6 @@ class B3CsvProcessor:
         df = self.__treat_columns(df)
         df = self.__sort(df)
         df = self.__treat_duplicated_operations_at_day(df)
-        df = self.__create_column_for_operation(df)
         df['data'] = pd.to_datetime(df['data_str'], format=self.__date_format, dayfirst=True)
         result = df[
             [
@@ -103,10 +91,8 @@ class B3CsvProcessor:
                 'data',
                 'operacao',
                 'corretagem', 
-                'qtd_compra', 
-                'qtd_venda', 
-                'pm_compra', 
-                'pm_venda'
+                'qtd',
+                'pm'
             ]
         ]
         return DataCei(result)
