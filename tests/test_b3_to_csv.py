@@ -1,6 +1,5 @@
 import unittest
-from src.b3_to_csv import B3CsvProcessor
-from src.data_cei import DataCei
+from src.b3_to_csv import B3CsvProcessor, DataCei
 import os
 from pathlib import Path
 
