@@ -6,7 +6,7 @@ from src.b3_to_csv import B3CsvProcessor, DataCei
 def get_resource(file):
     """Define a function to get resource from directory test.resource
     """
-    return (os.path.join(os.path.dirname(__file__), 
+    return (os.path.join(os.path.dirname(__file__),
                    '',
                    'resources', 
                    file))
