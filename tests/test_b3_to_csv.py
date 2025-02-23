@@ -8,7 +8,7 @@ def get_resource(file):
                    'resources', 
                    'Teste_PY_Negociacao.xlsx'))
 
-class TestCalculadora(unittest.TestCase):
+class TestB3CsvProcessor(unittest.TestCase):
     def test_create_treated_dataframe_from_xlsx(self):
         path_xlsx = get_resource('Teste_PY_Negociacao.xlsx')
         processor = B3CsvProcessor()
