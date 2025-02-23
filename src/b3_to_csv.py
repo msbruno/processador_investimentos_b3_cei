@@ -2,17 +2,26 @@ import pandas as pd
 from src.data_cei import DataCei 
 
 class B3CsvProcessor:
-    def __init__(self, fees:dict=None, asset_type:dict=dict()):
+    def __init__(self, fees:dict=None):
+        self.__date_format = '%d/%m/%Y'
         self.__fees = fees
-        self.__asset_type = asset_type
         pass
     
     def __rename_columns(self, df:pd.DataFrame):
-        columns={'Data do Negócio':'data', 'Tipo de Movimentação': 'operacao', 'Código de Negociação': 'ticker', 'Quantidade': 'qtd', 'Preço': 'pm'}
+        columns={
+            'Data do Negócio':'data', 
+            'Tipo de Movimentação': 'operacao', 
+            'Código de Negociação': 'ticker', 
+            'Quantidade': 'qtd', 
+            'Preço': 'pm'
+        }
         return df.rename(columns=columns)
 
     def __treat_datatypes(self, df:pd.DataFrame):
-        df['data'] = pd.to_datetime(df['data'], format='%d/%m/%Y', dayfirst=True)
+        
+        df['data'] = pd.to_datetime(df['data'], 
+                                    format=self.__date_format, 
+                                    dayfirst=True)
         return df
 
     def __add_fees(self, df:pd.DataFrame):
@@ -22,14 +31,18 @@ class B3CsvProcessor:
         return df
 
     def __remove_unecessary_columns(self, df:pd.DataFrame):
-        return df.drop(['Mercado', 'Prazo/Vencimento', 'Valor', 'Instituição'], axis=1)
+        return df.drop(['Mercado', 
+                        'Prazo/Vencimento', 
+                        'Valor', 
+                        'Instituição'], axis=1)
 
     def __create_str_date(self, df:pd.DataFrame):
-        df['data_str'] = df['data'].dt.strftime('%d/%m/%Y')
+        df['data_str'] = df['data'].dt.strftime(self.__date_format)
         return df
 
     def __remove_fraction_identifier_from_sticker(self, df):
-        df['ticker'] = df['ticker'].apply(lambda x : x[:-1] if x[-1] == 'F' else x)
+        func = lambda x : x[:-1] if x[-1] == 'F' else x
+        df['ticker'] = df['ticker'].apply(func)
         return df
 
     def __treat_operation(self, df):
@@ -52,7 +65,8 @@ class B3CsvProcessor:
     def __treat_duplicated_operations_at_day(self, df):
         temp = df.copy()
         temp['value'] = temp['pm'] * temp['qtd']
-        temp = temp.groupby(['data','data_str', 'ticker', 'operacao']).sum(['value', 'qtd']).reset_index()
+        group_condition = ['data','data_str', 'ticker', 'operacao']
+        temp = temp.groupby(group_condition).sum(['value', 'qtd']).reset_index()
         temp['pm'] = temp['value'] / temp['qtd']
         return temp
 
@@ -68,12 +82,6 @@ class B3CsvProcessor:
         temp['qtd_compra'], temp['pm_compra'] = zip(*temp.apply(lambda x:self.__func(x, 'COMPRADA'), axis=1))
         return temp
 
-    #TODO - create tipo based on stock type
-    def __map_type(self, df):
-        temp = df.copy()
-        temp['tipo'] = ''
-        return temp
-
     def create_treated_dataframe(self, path_xlsx: str)-> DataCei:
         df = pd.read_excel(path_xlsx)
         df = self.__treat_columns(df)
@@ -81,7 +89,18 @@ class B3CsvProcessor:
         df = self.__treat_duplicated_operations_at_day(df)
         df = self.__create_column_for_operation(df)
         df = self.__map_type(df)
-        df['data'] = pd.to_datetime(df['data_str'], format='%d/%m/%Y', dayfirst=True)
-        self.__result = df[['ticker','data','operacao','tipo','corretagem', 'qtd_compra', 'qtd_venda', 'pm_compra', 'pm_venda']]
-        return DataCei(self.__result)
+        df['data'] = pd.to_datetime(df['data_str'], format=self.__date_format, dayfirst=True)
+        result = df[
+            [
+                'ticker',
+                'data',
+                'operacao',
+                'corretagem', 
+                'qtd_compra', 
+                'qtd_venda', 
+                'pm_compra', 
+                'pm_venda'
+            ]
+        ]
+        return DataCei(result)
 

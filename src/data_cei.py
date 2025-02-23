@@ -3,17 +3,20 @@ import pandas as pd
 class DataCei:
     def __init__(self, df:pd.DataFrame=None):
         self.df = df
+        self.__date_format = '%d/%m/%Y'
     
     def load_data(self, path:str):
-        df_to_concat = pd.read_csv(path, sep=';')
-        df_to_concat['data'] = pd.to_datetime(df_to_concat['data'], format='%d/%m/%Y', dayfirst=True)
-        df_to_concat = df_to_concat.sort_values('data')
-        df_to_concat = pd.concat([df_to_concat, self.df], ignore_index=True)
-        df_to_concat = df_to_concat.sort_values(['data'])
-        self.df = df_to_concat
+        df = pd.read_csv(path, sep=';')
+        df['data'] = pd.to_datetime(df['data'], 
+                                    format=self.__date_format, 
+                                    dayfirst=True)
+        df = df.sort_values('data')
+        df = pd.concat([df, self.df], ignore_index=True)
+        df = df.sort_values(['data'])
+        self.df = df
             
     def save_to_csv(self, path:str) -> pd.DataFrame:
         if self.df is None:
             raise Exception('Data is empty')
-        self.df['data'] =  self.df['data'].dt.strftime('%d/%m/%Y')
+        self.df['data'] =  self.df['data'].dt.strftime(self.__date_format)
         self.df.to_csv(path, ';', index=False)
