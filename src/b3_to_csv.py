@@ -1,12 +1,18 @@
 import pandas as pd
-from src.data_cei import DataCei 
+from src.data_cei import DataCei
 
 class B3CsvProcessor:
+    """ Processor of B3 xlsx.
+    """
+
     def __init__(self, fees:dict=None):
+        """ Constructor.
+        Keyword arguments:
+        fees -- dictionary with institution names as key and fees as value 
+        """
         self.__date_format = '%d/%m/%Y'
         self.__fees = fees
-        pass
-    
+
     def __rename_columns(self, df:pd.DataFrame):
         columns={
             'Data do Negócio':'data', 
@@ -18,9 +24,8 @@ class B3CsvProcessor:
         return df.rename(columns=columns)
 
     def __treat_datatypes(self, df:pd.DataFrame):
-        
-        df['data'] = pd.to_datetime(df['data'], 
-                                    format=self.__date_format, 
+        df['data'] = pd.to_datetime(df['data'],
+                                    format=self.__date_format,
                                     dayfirst=True)
         return df
 
@@ -31,9 +36,9 @@ class B3CsvProcessor:
         return df
 
     def __remove_unecessary_columns(self, df:pd.DataFrame):
-        return df.drop(['Mercado', 
-                        'Prazo/Vencimento', 
-                        'Valor', 
+        return df.drop(['Mercado',
+                        'Prazo/Vencimento',
+                        'Valor',
                         'Instituição'], axis=1)
 
     def __create_str_date(self, df:pd.DataFrame):
@@ -41,8 +46,7 @@ class B3CsvProcessor:
         return df
 
     def __remove_fraction_identifier_from_sticker(self, df):
-        func = lambda x : x[:-1] if x[-1] == 'F' else x
-        df['ticker'] = df['ticker'].apply(func)
+        df['ticker'] = df['ticker'].apply(lambda x : x[:-1] if x[-1] == 'F' else x)
         return df
 
     def __treat_operation(self, df):
@@ -83,12 +87,15 @@ class B3CsvProcessor:
         return temp
 
     def create_treated_dataframe(self, path_xlsx: str)-> DataCei:
+        """Create treated Dataframe from B3's xslx .
+        Keyword arguments:
+        path_xlsx -- file's path 
+        """
         df = pd.read_excel(path_xlsx)
         df = self.__treat_columns(df)
         df = self.__sort(df)
         df = self.__treat_duplicated_operations_at_day(df)
         df = self.__create_column_for_operation(df)
-        df = self.__map_type(df)
         df['data'] = pd.to_datetime(df['data_str'], format=self.__date_format, dayfirst=True)
         result = df[
             [
@@ -103,4 +110,4 @@ class B3CsvProcessor:
             ]
         ]
         return DataCei(result)
-
+    
