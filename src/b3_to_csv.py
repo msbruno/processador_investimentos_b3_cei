@@ -1,6 +1,27 @@
-import sys
 import pandas as pd
 
+class DataCei:
+    def __init__(self, df:pd.DataFrame=None):
+        self.df = df
+    
+    def load_data(self, path:str):
+        df_to_concat = pd.read_csv(path:path, sep=';')
+        df_to_concat['data'] = pd.to_datetime(df_to_concat['data'], format='%d/%m/%Y', dayfirst=True)
+        df_to_concat = df_to_concat.sort_values('data')
+        df_to_concat = pd.concat([df_to_concat, self.df], ignore_index=True)
+        if self.df is None:
+            self.df = df_to_concat
+        else: 
+            df_to_concat = df_to_concat.sort_values(['data'])
+        self.df = df_to_concat
+            
+    def save_to_csv(self, path:str) -> pd.DataFrame:
+        if self.df is None:
+            raise Exception('Data is empty')
+        self.df['data'] =  self.df['data'].dt.strftime('%d/%m/%Y')
+        self.df.to_csv(path, ';', index=False)
+    
+    
 class B3CsvProcessor:
     def __init__(self, fees:dict=None, asset_type:dict=dict()):
         self.__fees = fees
@@ -8,7 +29,7 @@ class B3CsvProcessor:
         pass
     
     def __rename_columns(self, df:pd.DataFrame):
-        columns={'Data do Negócio':'data', 'Tipo de Movimentação': 'operacao', 'Código de Negociação': 'ticker', "Quantidade": 'qtd', 'Preço': 'pm'}
+        columns={'Data do Negócio':'data', 'Tipo de Movimentação': 'operacao', 'Código de Negociação': 'ticker', 'Quantidade': 'qtd', 'Preço': 'pm'}
         return df.rename(columns=columns)
 
     def __treat_datatypes(self, df:pd.DataFrame):
@@ -28,7 +49,7 @@ class B3CsvProcessor:
         df['data_str'] = df['data'].dt.strftime('%d/%m/%Y')
         return df
 
-    def __treat_ticker(self, df):
+    def __remove_fraction_identifier_from_sticker(self, df):
         df['ticker'] = df['ticker'].apply(lambda x : x[:-1] if x[-1] == 'F' else x)
         return df
 
@@ -45,7 +66,7 @@ class B3CsvProcessor:
         df = self.__add_fees(df)
         df = self.__create_str_date(df)
         df = self.__remove_unecessary_columns(df)
-        df = self.__treat_ticker(df)
+        df = self.__remove_fraction_identifier_from_sticker(df)
         df = self.__treat_operation(df)
         return df
 
@@ -74,30 +95,14 @@ class B3CsvProcessor:
         temp['tipo'] = ''
         return temp
 
-    def create_treated_dataframe(self, path_xlsx: str)-> pd.DataFrame:
-        df_original = pd.read_excel(path_xlsx)
-        df = df_original.copy()
+    def create_treated_dataframe(self, path_xlsx: str)-> DataCei:
+        df = pd.read_excel(path_xlsx)
         df = self.__treat_columns(df)
         df = self.__sort(df)
-        treated = self.__treat_duplicated_operations_at_day(df)
-        treated = self.__create_column_for_operation(treated)
-        treated = self.__map_type(treated)
-        treated['data'] = pd.to_datetime(treated['data_str'], format='%d/%m/%Y', dayfirst=True)
-        self.__result = treated[['ticker','data','operacao','tipo','corretagem', 'qtd_compra', 'qtd_venda', 'pm_compra', 'pm_venda']]
-        return self.__result
-
-    def concat_treated(self, path:str)-> pd.DataFrame:
-        df_atual = pd.read_csv(path, sep=';')
-        df_atual['data'] = pd.to_datetime(df_atual['data'], format='%d/%m/%Y', dayfirst=True)
-        df_atual = df_atual.sort_values(['data', 'exposicao'])
-        df_atual = df_atual.drop(columns=['Unnamed: 0', 'Unnamed: 0.1', 'Unnamed: 0.1.1'], errors='ignore')
-        df_atual = pd.concat([df_atual, self.__result], ignore_index=True)
-        df_atual = df_atual.sort_values(['data', 'exposicao'])
-        df_atual['data'] = df_atual['data'].dt.strftime('%d/%m/%Y')
-        self.__result = df_atual
-        return self.__result
-    
-    def save_to_file(self, path:str) -> pd.DataFrame:
-        self.__result.to_csv(path, ';', index=False)
-    
+        df = self.__treat_duplicated_operations_at_day(df)
+        df = self.__create_column_for_operation(df)
+        df = self.__map_type(df)
+        df['data'] = pd.to_datetime(df['data_str'], format='%d/%m/%Y', dayfirst=True)
+        self.__result = df[['ticker','data','operacao','tipo','corretagem', 'qtd_compra', 'qtd_venda', 'pm_compra', 'pm_venda']]
+        return DataCei(self.__result)
 
